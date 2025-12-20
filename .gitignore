@@ -8,3 +8,14 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+
+# Tooling defaults
+*.log
+.env
+.env.*
+venv/
+.coverage
+coverage.xml
+.eggs/
+.tox/
+.nox/

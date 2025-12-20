@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "test-accessory-finder"
-version = "1.0.14"
+version = "1.0.15"
 description = "Automation tooling for test-accessory-finder."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,6 +21,10 @@ dev = [
   "ruff>=0.5.5",
   "black>=24.8"
 ]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["iperf_discovery"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"

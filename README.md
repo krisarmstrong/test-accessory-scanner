@@ -95,13 +95,8 @@ Example `iperfaccessory` content:
 
 ### Versioning
 
-To increment the version number and update the changelog, use the `bump_version.py` script:
-
-```bash
-python3 bump_version.py "Added new feature X"
-```
-
-This increments the patch version (e.g., 1.0.14 to 1.0.15), updates `iperf_discovery.py`, and appends a changelog entry.
+Versioning and changelog updates are automated via release-please using Conventional Commits.
+No manual version bump script is required.
 
 ### Git Workflow
 

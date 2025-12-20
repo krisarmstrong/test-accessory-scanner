@@ -10,23 +10,56 @@ valid devices and logs results to a file. The script is designed for embedded
 systems and uses only Python 3 standard library modules.
 
 Author: Kris Armstrong
-Version: 1.0.14
+Version: Managed by release automation
 Date: April 17, 2025
 """
 
 __title__ = "iPerf Discovery"
 __author__ = "Kris Armstrong"
-__version__ = "1.0.14"
 
-
-# Standard Library Imports
 import argparse
 import asyncio
+from datetime import datetime
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+import ipaddress
 import logging
 import os
+from pathlib import Path
 import socket
-from datetime import datetime
-import ipaddress
+
+
+def _find_pyproject(start: Path) -> Path | None:
+    for parent in (start, *start.parents):
+        candidate = parent / "pyproject.toml"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _read_pyproject_version() -> str:
+    try:
+        import tomllib  # Python 3.11+
+    except ModuleNotFoundError:
+        return "0.0.0"
+
+    pyproject = _find_pyproject(Path(__file__).resolve())
+    if not pyproject:
+        return "0.0.0"
+    try:
+        data = tomllib.loads(pyproject.read_text())
+    except Exception:
+        return "0.0.0"
+    return data.get("project", {}).get("version", "0.0.0")
+
+
+_pyproject_version = _read_pyproject_version()
+if _pyproject_version != "0.0.0":
+    __version__ = _pyproject_version
+else:
+    try:
+        __version__ = _pkg_version("test-accessory-finder")
+    except PackageNotFoundError:
+        __version__ = "0.0.0"
 
 
 # Global Configuration
