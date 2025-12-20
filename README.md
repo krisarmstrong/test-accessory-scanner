@@ -46,7 +46,7 @@ Run the script with a network address in CIDR notation (e.g., `192.168.1.0/24`):
 
 - `network`: The IPv4 network to scan (required, e.g., `192.168.1.0/24`).
 - `-t, --timeout SECONDS`: Override the default socket timeout (default: 0.010s).
-- `-v, --version`: Display the script version (1.0.13).
+- `-v, --version`: Display the script version (1.0.14).
 - `-o, --options`: Use settings from `/mnt/mmc3/iperfaccessory.conf`.
 - `--verbose`: Enable verbose console output.
 
@@ -101,7 +101,7 @@ To increment the version number and update the changelog, use the `bump_version.
 python3 bump_version.py "Added new feature X"
 ```
 
-This increments the patch version (e.g., 1.0.13 to 1.0.14), updates `iperf_discovery.py`, and appends a changelog entry.
+This increments the patch version (e.g., 1.0.14 to 1.0.15), updates `iperf_discovery.py`, and appends a changelog entry.
 
 ### Git Workflow
 
@@ -137,4 +137,4 @@ This software is proprietary and intended for use with NetAlly Test Accessories.
 
 ## Version
 
-1.0.13 (April 17, 2025)
+1.0.14 (December 20, 2025)

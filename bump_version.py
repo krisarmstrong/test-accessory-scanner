@@ -73,7 +73,7 @@ def increment_version(major, minor, patch):
         patch (int): Patch version number.
 
     Returns:
-        str: New version string (e.g., "1.0.13").
+        str: New version string (e.g., "1.0.14").
     """
     return f"{major}.{minor}.{patch + 1}"
 
@@ -98,7 +98,8 @@ def update_script(file_path, old_version_line, new_version):
         content = content.replace(old_version_line, new_version_line)
 
         # Update argparse version
-        old_argparse = f'version=f"%(prog)s {old_version_line.split("=")[1].strip().strip(\'"\')}"'
+        old_version = old_version_line.split("=", 1)[1].strip().strip('"').strip("'")
+        old_argparse = f'version=f"%(prog)s {old_version}"'
         new_argparse = f'version=f"%(prog)s {new_version}"'
         content = content.replace(old_argparse, new_argparse)
 
@@ -139,7 +140,7 @@ def update_changelog(file_path, new_version, description):
         with file_path.open('w') as file:
             file.write(content)
         return True
-    except ( generally:
+    except (FileNotFoundError, OSError) as err:
         print(f"Error updating changelog: {err}")
         return False
 

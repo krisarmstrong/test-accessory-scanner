@@ -10,13 +10,13 @@ valid devices and logs results to a file. The script is designed for embedded
 systems and uses only Python 3 standard library modules.
 
 Author: Kris Armstrong
-Version: 1.0.13
+Version: 1.0.14
 Date: April 17, 2025
 """
 
 __title__ = "iPerf Discovery"
 __author__ = "Kris Armstrong"
-__version__ = "1.0.13"
+__version__ = "1.0.14"
 
 
 # Standard Library Imports
