@@ -7,7 +7,7 @@ name = "test-accessory-finder"
 version = "1.0.15"
 description = "Automation tooling for test-accessory-finder."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 license = { file = "LICENSE" }
 authors = [
   { name = "Kris Armstrong" }
