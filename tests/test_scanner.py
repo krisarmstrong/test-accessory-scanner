@@ -1,8 +1,8 @@
 """Basic tests for test-accessory-finder."""
 
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,5 +26,5 @@ class TestAccessoryFinderBasic(unittest.TestCase):
         self.assertTrue(True, "Basic test structure in place")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

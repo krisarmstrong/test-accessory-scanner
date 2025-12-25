@@ -19,13 +19,13 @@ __author__ = "Kris Armstrong"
 
 import argparse
 import asyncio
-from datetime import datetime
-from importlib.metadata import PackageNotFoundError, version as _pkg_version
 import ipaddress
 import logging
 import os
+from datetime import datetime
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 from pathlib import Path
-import socket
 
 
 def _find_pyproject(start: Path) -> Path | None:
@@ -65,15 +65,16 @@ else:
 # Global Configuration
 class Config:
     """Global configuration constants for the iPerf Discovery utility."""
+
     buffer_size = 4096  # TCP buffer size in bytes
-    message = 'TA:getattrlong'.encode('utf-8')  # Query message for iPerf3 servers
+    message = b"TA:getattrlong"  # Query message for iPerf3 servers
     tcp_port = 2359  # Default TCP port for NetAlly Test Accessory
     min_scan_timeout = 0.010  # Minimum socket timeout in seconds (10ms)
     max_scan_timeout = 0.160  # Maximum socket timeout in seconds (160ms)
     query_timeout = 5.0  # Query socket timeout in seconds
-    log_file = 'iperfdiscovery.log'  # Log file for debugging and info
-    accessory_file = 'iperfaccessory'  # Output file for discovered devices
-    option_file = '/mnt/mmc3/iperfaccessory.conf'  # Configuration file path
+    log_file = "iperfdiscovery.log"  # Log file for debugging and info
+    accessory_file = "iperfaccessory"  # Output file for discovered devices
+    option_file = "/mnt/mmc3/iperfaccessory.conf"  # Configuration file path
 
 
 def setup_logging():
@@ -84,9 +85,9 @@ def setup_logging():
     """
     logging.basicConfig(
         filename=Config.log_file,
-        filemode='w',
+        filemode="w",
         level=logging.DEBUG,
-        format='%(asctime)s [%(levelname)s] %(message)s'
+        format="%(asctime)s [%(levelname)s] %(message)s",
     )
 
 
@@ -115,31 +116,21 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Discover NetAlly Test Accessories running iPerf3 servers on a network."
     )
+    parser.add_argument("network", help="IPv4 network to scan (e.g., 192.168.1.0/24)", type=str)
     parser.add_argument(
-        'network',
-        help="IPv4 network to scan (e.g., 192.168.1.0/24)",
-        type=str
-    )
-    parser.add_argument(
-        '-t', '--timeout',
+        "-t",
+        "--timeout",
         type=float,
-        help="Socket timeout in seconds (overrides default %.3fs)" % Config.min_scan_timeout
+        help="Socket timeout in seconds (overrides default %.3fs)" % Config.min_scan_timeout,
     )
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument(
-        '-v', '--version',
-        action='version',
-        version=f"%(prog)s {__version__}"
+        "-o",
+        "--options",
+        action="store_true",
+        help="Use advanced configuration from %s" % Config.option_file,
     )
-    parser.add_argument(
-        '-o', '--options',
-        action='store_true',
-        help="Use advanced configuration from %s" % Config.option_file
-    )
-    parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help="Enable verbose console output"
-    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose console output")
 
     args = parser.parse_args()
 
@@ -152,9 +143,7 @@ def parse_arguments():
     # Add console logging if verbose
     if args.verbose:
         console_handler = logging.StreamHandler()
-        console_handler.setFormatter(
-            logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-        )
+        console_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         logging.getLogger().addHandler(console_handler)
 
     return args
@@ -167,14 +156,16 @@ def parse_options_file():
         float: Timeout value from the file, or None if parsing fails.
     """
     try:
-        with open(Config.option_file, 'r') as file:
+        with open(Config.option_file) as file:
             for line in file:
                 line = line.strip()
-                if line.startswith('timeout='):
+                if line.startswith("timeout="):
                     try:
-                        timeout = float(line.split('=')[1])
+                        timeout = float(line.split("=")[1])
                         if Config.min_scan_timeout <= timeout <= Config.max_scan_timeout:
-                            logging.debug("Parsed timeout from %s: %.3fs", Config.option_file, timeout)
+                            logging.debug(
+                                "Parsed timeout from %s: %.3fs", Config.option_file, timeout
+                            )
                             return timeout
                         logging.warning("Timeout out of range: %.3fs", timeout)
                     except ValueError:
@@ -197,14 +188,13 @@ async def tcp_port_ping_single(host, timeout):
     """
     try:
         reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(str(host), Config.tcp_port),
-            timeout=timeout
+            asyncio.open_connection(str(host), Config.tcp_port), timeout=timeout
         )
         writer.close()
         await writer.wait_closed()
         logging.debug("Host %s has port %d open", host, Config.tcp_port)
         return host
-    except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as err:
+    except (TimeoutError, ConnectionRefusedError, OSError) as err:
         logging.debug("Failed to connect to %s:%d: %s", host, Config.tcp_port, err)
         return None
 
@@ -226,10 +216,7 @@ async def tcp_port_ping(network, timeout):
     start_time = datetime.now()
     logging.info("Starting TCP port scan on %s", network)
 
-    tasks = [
-        tcp_port_ping_single(host, timeout)
-        for host in network.hosts()
-    ]
+    tasks = [tcp_port_ping_single(host, timeout) for host in network.hosts()]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     for host, result in zip(network.hosts(), results):
@@ -243,7 +230,9 @@ async def tcp_port_ping(network, timeout):
 
     logging.info(
         "TCP scan completed: %d/%d hosts active (%.3fs)",
-        active_ip_count, total_ip_count, scan_time.total_seconds()
+        active_ip_count,
+        total_ip_count,
+        scan_time.total_seconds(),
     )
 
     return responsive_hosts, total_ip_count, active_ip_count, scan_time
@@ -260,8 +249,7 @@ async def iperf_query_single(host):
     """
     try:
         reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(str(host), Config.tcp_port),
-            timeout=Config.query_timeout
+            asyncio.open_connection(str(host), Config.tcp_port), timeout=Config.query_timeout
         )
         writer.write(Config.message)
         await writer.drain()
@@ -270,7 +258,7 @@ async def iperf_query_single(host):
         await writer.wait_closed()
         logging.debug("Received response from %s: %s", host, response)
         return host, response
-    except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as err:
+    except (TimeoutError, ConnectionRefusedError, OSError) as err:
         logging.debug("Query failed for %s: %s", host, err)
         return host, None
 
@@ -300,8 +288,8 @@ async def iperf_query(responsive_hosts, total_ip_count, active_ip_count, scan_ti
     for host, response in results:
         if response and isinstance(response, bytes):
             try:
-                decoded = response.decode('utf-8')
-                if 'iPerf Remote' in decoded:
+                decoded = response.decode("utf-8")
+                if "iPerf Remote" in decoded:
                     valid_count += 1
                     accessories.append((host, decoded))
                     logging.debug("Valid iPerf Remote at %s: %s", host, decoded)
@@ -321,13 +309,20 @@ async def iperf_query(responsive_hosts, total_ip_count, active_ip_count, scan_ti
 
     logging.info(
         "iPerf query completed: %d valid, %d invalid (%.3fs)",
-        valid_count, invalid_count, query_time.total_seconds()
+        valid_count,
+        invalid_count,
+        query_time.total_seconds(),
     )
 
     write_accessory_file(accessories)
     log_summary(
-        valid_count, invalid_count, active_ip_count,
-        total_ip_count, scan_time, query_time, total_time
+        valid_count,
+        invalid_count,
+        active_ip_count,
+        total_ip_count,
+        scan_time,
+        query_time,
+        total_time,
     )
 
 
@@ -338,7 +333,7 @@ def write_accessory_file(accessories):
         accessories (list): List of (host, response) tuples for valid devices.
     """
     try:
-        with open(Config.accessory_file, 'a') as file:
+        with open(Config.accessory_file, "a") as file:
             for host, response in accessories:
                 cleaned = clean_response(response)
                 file.write(f"{host}: {cleaned}\n")
@@ -357,26 +352,27 @@ def clean_response(response):
         str: Cleaned response with standardized formatting.
     """
     cleaned = response.strip()
-    cleaned = ' '.join(cleaned.split())  # Remove duplicate spaces
+    cleaned = " ".join(cleaned.split())  # Remove duplicate spaces
     replacements = {
-        'ethaddr=': 'MAC=',
-        'PS9: ': 'Batt=',
-        'PS8: ': 'PoeV=',
-        'EtherType: ': 'NsType=',
-        'Device ID: ': 'NsDev=',
-        'Addresses: ': 'NsAddr=',
-        'Platform: ': 'NsPlatform=',
-        'Port ID: ': 'NsPort=',
-        'Vlan ID:': 'NsVlan=',
-        '\\n': ';'
+        "ethaddr=": "MAC=",
+        "PS9: ": "Batt=",
+        "PS8: ": "PoeV=",
+        "EtherType: ": "NsType=",
+        "Device ID: ": "NsDev=",
+        "Addresses: ": "NsAddr=",
+        "Platform: ": "NsPlatform=",
+        "Port ID: ": "NsPort=",
+        "Vlan ID:": "NsVlan=",
+        "\\n": ";",
     }
     for old, new in replacements.items():
         cleaned = cleaned.replace(old, new)
     return cleaned
 
 
-def log_summary(valid_count, invalid_count, active_ip_count, total_ip_count,
-                scan_time, query_time, total_time):
+def log_summary(
+    valid_count, invalid_count, active_ip_count, total_ip_count, scan_time, query_time, total_time
+):
     """Log a summary of the scan and query results.
 
     Args:
@@ -419,12 +415,17 @@ async def main():
         else:
             logging.warning(
                 "Timeout %.3fs out of range (%.3f-%.3f), using default %.3fs",
-                args.timeout, Config.min_scan_timeout, Config.max_scan_timeout, timeout
+                args.timeout,
+                Config.min_scan_timeout,
+                Config.max_scan_timeout,
+                timeout,
             )
 
     try:
         network = ipaddress.ip_network(args.network, strict=False)
-        responsive_hosts, total_ip_count, active_ip_count, scan_time = await tcp_port_ping(network, timeout)
+        responsive_hosts, total_ip_count, active_ip_count, scan_time = await tcp_port_ping(
+            network, timeout
+        )
         await iperf_query(responsive_hosts, total_ip_count, active_ip_count, scan_time)
     except KeyboardInterrupt:
         logging.info("Scan interrupted by user")
